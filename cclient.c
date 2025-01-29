@@ -23,6 +23,7 @@
 
 #include "networks.h"
 #include "safeUtil.h"
+#include "pdu_io.h"
 
 #define MAXBUF 1024
 #define DEBUG_FLAG 1
@@ -56,12 +57,15 @@ void sendToServer(int socketNum)
 	sendLen = readFromStdin(sendBuf);
 	printf("read: %s string len: %d (including null)\n", sendBuf, sendLen);
 	
+	sendPDU(socketNum, sendBuf, sendLen);
+	/*
 	sent =  safeSend(socketNum, sendBuf, sendLen, 0);
 	if (sent < 0)
 	{
 		perror("send call");
 		exit(-1);
 	}
+	*/
 
 	printf("Amount of data sent is: %d\n", sent);
 }
