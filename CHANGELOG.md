@@ -1,3 +1,7 @@
+## Version 0.1.5 - Modified server to handle a client termination (partially)
+- When server detects a connection closed, it prints the connection was closed
+- Fixed issue: message recevied did not print on server terminal
+
 ## Version 0.1.4 - Server modified to use poll() to handle multiple clients
 - Changes in server.c
 

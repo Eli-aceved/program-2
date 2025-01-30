@@ -15,9 +15,10 @@
 /*  Includes */
 #include "pdu_io.h"
 #include "safeUtil.h"
+#include "pollLib.h"
 #include <sys/socket.h>
 #include <arpa/inet.h>  // Internet operations
-
+#include <unistd.h>     // close()
 
 /*  Definitions */
 #define TOTAL_PDU_LEN (2 + lengthOfData)    // Total length of PDU = 2 bytes for header + lengthOfData bytes for payload
@@ -89,3 +90,6 @@ int recvPDU(int socketNumber, uint8_t *dataBuffer, int bufferSize) {
 
     return dataBytesReceived;   // Return the length of the payload
 }
+
+
+

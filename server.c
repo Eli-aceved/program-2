@@ -31,9 +31,11 @@
 
 void recvFromClient(int clientSocket);
 int checkArgs(int argc, char *argv[]);
-void serverControl(int mainServerSocket, int resp_sock, int clientSocket);
+void serverControl(int mainServerSocket, int clientSocket);
 void addNewSocket(int mainServerSocket);
 void processClient(int clientSocket);
+void handleClientTermination(int clientSocket, uint8_t *dataBuffer);
+
 
 int main(int argc, char *argv[])
 {
@@ -50,12 +52,11 @@ int main(int argc, char *argv[])
 	addToPollSet(mainServerSocket);
 
 	while (1) {
-		int resp_sock = pollCall(-1); // Blocks until a socket is ready
-		serverControl(mainServerSocket, resp_sock, clientSocket);
+		serverControl(mainServerSocket, clientSocket);
+
 	}
 	
 	/* close the sockets */
-	close(clientSocket);
 	close(mainServerSocket);
 
 	
@@ -78,9 +79,12 @@ void recvFromClient(int clientSocket)
 	{
 		printf("Message received, length: %d Data: %s\n", messageLen, dataBuffer);
 	}
-	else
+	else if (messageLen == 0)
 	{
+		
 		printf("Connection closed by other side\n");
+		removeFromPollSet(clientSocket);
+		close(clientSocket);
 	}
 }
 
@@ -103,16 +107,23 @@ int checkArgs(int argc, char *argv[])
 	return portNumber;
 }
 
-void serverControl(int mainServerSocket, int resp_sock, int clientSocket) {
+void serverControl(int mainServerSocket, int clientSocket) {
+	int resp_sock = pollCall(-1); // Blocks until a socket is ready
+
+	
+	if (resp_sock < 0) {
+		perror("pollCall");
+		exit(-1);
+	}
 	// Accepts new connections and adds them to the poll set
-	if (resp_sock == mainServerSocket) {
+	else if (resp_sock == mainServerSocket) {
 			// New connection
 			addNewSocket(mainServerSocket);
 	}
 	// Processes existing connections
-	else if (resp_sock == clientSocket) {
+	else {
 		// Existing connection
-		processClient(clientSocket);
+		processClient(resp_sock);
 	}
 }
 
@@ -124,4 +135,3 @@ void addNewSocket(int mainServerSocket) {
 void processClient(int clientSocket) {
 	recvFromClient(clientSocket);
 }
-
