@@ -1,3 +1,6 @@
+## Version 0.1.3 - Server modified to loop until ^c
+- Modified server.c (lines 45-48)
+
 ## Version 0.1.2 - sendPDU() and recvPDU() complete and passed testing
 - Ran into issues, now it should be up to date
 - recvPDU() done

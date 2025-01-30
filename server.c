@@ -42,10 +42,12 @@ int main(int argc, char *argv[])
 	//create the server socket
 	mainServerSocket = tcpServerSetup(portNumber);
 
-	// wait for client to connect
-	clientSocket = tcpAccept(mainServerSocket, DEBUG_FLAG);
+	while (1){
+		// wait for client to connect
+		clientSocket = tcpAccept(mainServerSocket, DEBUG_FLAG);
 
-	recvFromClient(clientSocket);
+		recvFromClient(clientSocket);
+	}
 	
 	/* close the sockets */
 	close(clientSocket);

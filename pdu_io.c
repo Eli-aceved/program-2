@@ -15,7 +15,6 @@
 /*  Includes */
 #include "pdu_io.h"
 #include "safeUtil.h"
-
 #include <sys/socket.h>
 #include <arpa/inet.h>  // Internet operations
 
