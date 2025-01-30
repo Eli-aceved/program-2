@@ -5,12 +5,12 @@ CC= gcc
 CFLAGS= -g -Wall -std=gnu99
 LIBS = 
 
-OBJS = networks.o gethostbyname.o pollLib.o safeUtil.o
+OBJS = networks.o gethostbyname.o pollLib.o safeUtil.o pdu_io.o
 
-all:   cclient server
+all:   cclient server 
 
-cclient: cclient.c $(OBJS)
-	$(CC) $(CFLAGS) -o cclient cclient.c  $(OBJS) $(LIBS)
+cclient: cclient.c pdu_io.c $(OBJS)
+	$(CC) $(CFLAGS) -o cclient cclient.c $(OBJS) $(LIBS)
 
 server: server.c $(OBJS)
 	$(CC) $(CFLAGS) -o server server.c $(OBJS) $(LIBS)
@@ -22,8 +22,5 @@ cleano:
 	rm -f *.o
 
 clean:
-	rm -f myServer myClient *.o
-
-
-
+	rm -f server cclient *.o
 

@@ -1,3 +1,7 @@
+## Version 0.1.1 - sendPDU() and recvPDU() complete and passed testing
+- recvPDU() done
+- Modifications done on cclient and server (1 line of code change on each)
+
 ## Version 0.1.0 - Ready for testing sendPDU()
 - Created pdu_io.c and .h which will hold functions sendPDU and recvPDU
 - First few versions will be a part of Lab3 mini program
