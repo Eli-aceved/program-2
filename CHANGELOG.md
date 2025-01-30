@@ -1,3 +1,6 @@
+## Version 0.1.6 - Finished mini-program
+- 
+
 ## Version 0.1.5 - Modified server to handle a client termination (partially)
 - When server detects a connection closed, it prints the connection was closed
 - Fixed issue: message recevied did not print on server terminal

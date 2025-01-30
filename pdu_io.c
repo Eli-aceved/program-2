@@ -37,7 +37,7 @@ int sendPDU(int clientSocket, uint8_t *dataBuffer, int lengthOfData) {
 
     // Send entire PDU
     if (safeSend(clientSocket, pduBuffer, TOTAL_PDU_LEN, 0) < 0) {
-        perror("Error when sedning PDU");
+        perror("Error when sending PDU");
         exit(-1);
     }
 
@@ -48,12 +48,10 @@ int sendPDU(int clientSocket, uint8_t *dataBuffer, int lengthOfData) {
 
 int recvPDU(int socketNumber, uint8_t *dataBuffer, int bufferSize) {
     int dataBytesReceived = 0;
-    uint8_t pduLenBuff[2] = {0};  // Buffer for the 2-byte len header
+    uint8_t pduBuff[BUF_SIZE] = {0};  // Buffer for the 2-byte len header
     uint16_t pduLength = 0;
-
     // Receive the 2-byte PDU length header
-    dataBytesReceived = safeRecv(socketNumber, pduLenBuff, 2, MSG_WAITALL);
-
+    dataBytesReceived = safeRecv(socketNumber, pduBuff, 2, MSG_WAITALL);
     if (dataBytesReceived < 0) {
         perror("Error with PDU length received");
         exit(-1);
@@ -63,7 +61,7 @@ int recvPDU(int socketNumber, uint8_t *dataBuffer, int bufferSize) {
     }
 
     // Extracting the length of the PDU
-    memcpy(&pduLength, pduLenBuff, sizeof(pduLength));
+    memcpy(&pduLength, pduBuff, sizeof(pduLength));
 
     // Convert to host byte order
     pduLength = ntohs(pduLength);
@@ -75,10 +73,12 @@ int recvPDU(int socketNumber, uint8_t *dataBuffer, int bufferSize) {
     }
 
     // Subtract header size from pduLength to get payload length
-    int payloadLen = pduLength -=2;
+    int payloadLen = pduLength - 2;
 
     // Receive the payload
-    dataBytesReceived = safeRecv(socketNumber, dataBuffer, payloadLen, MSG_WAITALL);
+    dataBytesReceived = safeRecv(socketNumber, &pduBuff[2], payloadLen, MSG_WAITALL);
+
+    memcpy(dataBuffer, &pduBuff[2], payloadLen);
 
     if (dataBytesReceived < 0) {
         perror("Error with PDU payload received");
@@ -87,6 +87,9 @@ int recvPDU(int socketNumber, uint8_t *dataBuffer, int bufferSize) {
     if (dataBytesReceived == 0) {
         return 0;
     }
+
+    // Send buffer to the client 
+    safeSend(socketNumber, pduBuff, pduLength, 0);
 
     return dataBytesReceived;   // Return the length of the payload
 }

@@ -24,6 +24,7 @@
 #include "networks.h"
 #include "safeUtil.h"
 #include "pdu_io.h"
+#include "pollLib.h"
 
 #define MAXBUF 1024
 #define DEBUG_FLAG 1
@@ -31,6 +32,9 @@
 void sendToServer(int socketNum);
 int readFromStdin(uint8_t * buffer);
 void checkArgs(int argc, char * argv[]);
+void clientControl(int socketNum);
+void processStdin(int socketNum);
+void processMsgFromServer(int socketNum);
 
 int main(int argc, char * argv[])
 {
@@ -38,10 +42,16 @@ int main(int argc, char * argv[])
 	
 	checkArgs(argc, argv);
 
-	/* set up the TCP Client socket  */
 	socketNum = tcpClientSetup(argv[1], argv[2], DEBUG_FLAG);
-	
-	sendToServer(socketNum);
+
+	setupPollSet();
+	addToPollSet(socketNum);
+	addToPollSet(STDIN_FILENO);
+
+	while (1) {
+		/* set up the TCP Client socket  */
+		clientControl(socketNum);
+	}
 	
 	close(socketNum);
 	
@@ -75,7 +85,6 @@ int readFromStdin(uint8_t * buffer)
 	
 	// Important you don't input more characters than you have space 
 	buffer[0] = '\0';
-	printf("Enter data: ");
 	while (inputLen < (MAXBUF - 1) && aChar != '\n')
 	{
 		aChar = getchar();
@@ -101,4 +110,52 @@ void checkArgs(int argc, char * argv[])
 		printf("usage: %s host-name port-number \n", argv[0]);
 		exit(1);
 	}
+}
+
+void clientControl(int socketNum) {
+	printf("Enter data: ");
+	fflush(stdout);
+	int c_sock = pollCall(-1); // Blocks until a socket is ready
+
+	
+	if (c_sock < 0) {
+		perror("pollCall");
+		exit(-1);
+	}
+	// Accepts new connections and adds them to the poll set
+	else if (c_sock == socketNum) {
+			// New connection
+			processMsgFromServer(socketNum);
+	}
+	// Processes existing connections
+	else if (c_sock == STDIN_FILENO) {
+		// Existing connection
+		processStdin(socketNum);
+	}
+
+}
+
+void processStdin(int socketNum) {
+	sendToServer(socketNum);
+}
+
+void processMsgFromServer(int socketNum) {
+	uint8_t dataBuffer[MAXBUF];
+	int bytesRead;
+	uint16_t pduLength = 0;
+
+	bytesRead = safeRecv(socketNum, dataBuffer, MAXBUF, 0);
+
+	memcpy(&pduLength, dataBuffer, 2);
+	pduLength = ntohs(pduLength);
+
+	if (bytesRead == 0) {
+		printf("\nServer has terminated\n");
+		close(socketNum);
+		exit(-1);
+	}
+	else if (bytesRead > 0) {
+		printf("\nMessage received from server: %s + Length from server: %u\n", &dataBuffer[2], pduLength);
+	}
+
 }

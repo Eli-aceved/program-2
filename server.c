@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 	//create the server socket
 	mainServerSocket = tcpServerSetup(portNumber);
 
-	// 
+
 	addToPollSet(mainServerSocket);
 
 	while (1) {
@@ -77,12 +77,12 @@ void recvFromClient(int clientSocket)
 
 	if (messageLen > 0)
 	{
-		printf("Message received, length: %d Data: %s\n", messageLen, dataBuffer);
+		printf("Message received on socket: %d, length: %d Data: %s\n", clientSocket, messageLen, dataBuffer);
 	}
 	else if (messageLen == 0)
 	{
 		
-		printf("Connection closed by other side\n");
+		printf("Connection closed by other side: %d\n", clientSocket);
 		removeFromPollSet(clientSocket);
 		close(clientSocket);
 	}
@@ -110,7 +110,6 @@ int checkArgs(int argc, char *argv[])
 void serverControl(int mainServerSocket, int clientSocket) {
 	int resp_sock = pollCall(-1); // Blocks until a socket is ready
 
-	
 	if (resp_sock < 0) {
 		perror("pollCall");
 		exit(-1);
