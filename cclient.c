@@ -57,15 +57,13 @@ void sendToServer(int socketNum)
 	sendLen = readFromStdin(sendBuf);
 	printf("read: %s string len: %d (including null)\n", sendBuf, sendLen);
 	
-	sendPDU(socketNum, sendBuf, sendLen);
-	/*
-	sent =  safeSend(socketNum, sendBuf, sendLen, 0);
+	sent =  sendPDU(socketNum, sendBuf, sendLen);
 	if (sent < 0)
 	{
 		perror("send call");
 		exit(-1);
 	}
-	*/
+	
 
 	printf("Amount of data sent is: %d\n", sent);
 }

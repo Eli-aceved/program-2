@@ -1,3 +1,8 @@
+## Version 0.1.2 - sendPDU() and recvPDU() complete and passed testing
+- Ran into issues, now it should be up to date
+- recvPDU() done
+- Modifications done on cclient and server (1 line of code change on each)
+
 ## Version 0.1.1 - sendPDU() and recvPDU() complete and passed testing
 - recvPDU() done
 - Modifications done on cclient and server (1 line of code change on each)
