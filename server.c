@@ -24,17 +24,21 @@
 #include "networks.h"
 #include "safeUtil.h"
 #include "pdu_io.h"
+#include "pollLib.h"
 
 #define MAXBUF 1024
 #define DEBUG_FLAG 1
 
 void recvFromClient(int clientSocket);
 int checkArgs(int argc, char *argv[]);
+void serverControl(int mainServerSocket, int resp_sock, int clientSocket);
+void addNewSocket(int mainServerSocket);
+void processClient(int clientSocket);
 
 int main(int argc, char *argv[])
 {
 	int mainServerSocket = 0;   //socket descriptor for the server socket
-	int clientSocket = 0;   //socket descriptor for the client socket
+	int clientSocket = 0;   	//socket descriptor for the client socket
 	int portNumber = 0;
 	
 	portNumber = checkArgs(argc, argv);
@@ -42,11 +46,12 @@ int main(int argc, char *argv[])
 	//create the server socket
 	mainServerSocket = tcpServerSetup(portNumber);
 
-	while (1){
-		// wait for client to connect
-		clientSocket = tcpAccept(mainServerSocket, DEBUG_FLAG);
+	// 
+	addToPollSet(mainServerSocket);
 
-		recvFromClient(clientSocket);
+	while (1) {
+		int resp_sock = pollCall(-1); // Blocks until a socket is ready
+		serverControl(mainServerSocket, resp_sock, clientSocket);
 	}
 	
 	/* close the sockets */
@@ -96,5 +101,27 @@ int checkArgs(int argc, char *argv[])
 	}
 	
 	return portNumber;
+}
+
+void serverControl(int mainServerSocket, int resp_sock, int clientSocket) {
+	// Accepts new connections and adds them to the poll set
+	if (resp_sock == mainServerSocket) {
+			// New connection
+			addNewSocket(mainServerSocket);
+	}
+	// Processes existing connections
+	else if (resp_sock == clientSocket) {
+		// Existing connection
+		processClient(clientSocket);
+	}
+}
+
+void addNewSocket(int mainServerSocket) {
+	int newSocket = tcpAccept(mainServerSocket, DEBUG_FLAG);
+	addToPollSet(newSocket);
+}
+
+void processClient(int clientSocket) {
+	recvFromClient(clientSocket);
 }
 

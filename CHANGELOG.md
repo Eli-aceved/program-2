@@ -1,3 +1,6 @@
+## Version 0.1.4 - Server modified to use poll() to handle multiple clients
+- Changes in server.c
+
 ## Version 0.1.3 - Server modified to loop until ^c
 - Modified server.c (lines 45-48)
 
