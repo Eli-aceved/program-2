@@ -2,7 +2,7 @@
 * myServer.c
 * 
 * Writen by Prof. Smith, updated Jan 2023
-* Use at your own risk.  
+* Modified by Elizabeth Acevedo on 01/29/2025
 *
 *****************************************************************************/
 
@@ -34,8 +34,6 @@ int checkArgs(int argc, char *argv[]);
 void serverControl(int mainServerSocket, int clientSocket);
 void addNewSocket(int mainServerSocket);
 void processClient(int clientSocket);
-void handleClientTermination(int clientSocket, uint8_t *dataBuffer);
-
 
 int main(int argc, char *argv[])
 {
@@ -68,7 +66,7 @@ void recvFromClient(int clientSocket)
 	uint8_t dataBuffer[MAXBUF];
 	int messageLen = 0;
 	
-	//now get the data from the client_socket
+	// Now get the data from the client_socket
 	if ((messageLen = recvPDU(clientSocket, dataBuffer, MAXBUF)) < 0)
 	{
 		perror("recv call");
@@ -81,7 +79,6 @@ void recvFromClient(int clientSocket)
 	}
 	else if (messageLen == 0)
 	{
-		
 		printf("Connection closed by other side: %d\n", clientSocket);
 		removeFromPollSet(clientSocket);
 		close(clientSocket);
@@ -108,6 +105,7 @@ int checkArgs(int argc, char *argv[])
 }
 
 void serverControl(int mainServerSocket, int clientSocket) {
+	// Wait for a socket to be ready
 	int resp_sock = pollCall(-1); // Blocks until a socket is ready
 
 	if (resp_sock < 0) {
@@ -127,10 +125,13 @@ void serverControl(int mainServerSocket, int clientSocket) {
 }
 
 void addNewSocket(int mainServerSocket) {
+	// Accept a new connection
 	int newSocket = tcpAccept(mainServerSocket, DEBUG_FLAG);
+	// Add the new socket to the poll set
 	addToPollSet(newSocket);
 }
 
 void processClient(int clientSocket) {
+	// Receive data from the client
 	recvFromClient(clientSocket);
 }

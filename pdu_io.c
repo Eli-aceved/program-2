@@ -4,9 +4,11 @@
  * 
  * File: pdu_io.c
  * 
- * Description: T
+ * Description: This program is used to send and receive PDUs between the 
+ * client and server. 
  * 
- * Utilization: 
+ * Utilization: ./server                                    // Run the server
+ *              ./client localhost <server port number>     // Run the client
  * 
  * Date: 01/28/2025
  * 
@@ -50,6 +52,7 @@ int recvPDU(int socketNumber, uint8_t *dataBuffer, int bufferSize) {
     int dataBytesReceived = 0;
     uint8_t pduBuff[BUF_SIZE] = {0};  // Buffer for the 2-byte len header
     uint16_t pduLength = 0;
+
     // Receive the 2-byte PDU length header
     dataBytesReceived = safeRecv(socketNumber, pduBuff, 2, MSG_WAITALL);
     if (dataBytesReceived < 0) {
@@ -78,6 +81,7 @@ int recvPDU(int socketNumber, uint8_t *dataBuffer, int bufferSize) {
     // Receive the payload
     dataBytesReceived = safeRecv(socketNumber, &pduBuff[2], payloadLen, MSG_WAITALL);
 
+    // Copy the payload to the dataBuffer
     memcpy(dataBuffer, &pduBuff[2], payloadLen);
 
     if (dataBytesReceived < 0) {
@@ -85,6 +89,7 @@ int recvPDU(int socketNumber, uint8_t *dataBuffer, int bufferSize) {
         exit(-1);
     }
     if (dataBytesReceived == 0) {
+        // Connection closed
         return 0;
     }
 

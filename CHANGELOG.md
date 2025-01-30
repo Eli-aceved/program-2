@@ -1,5 +1,15 @@
+## Version 0.1.7 - Added comments
+- Added comments to code
+- Modified client to handle the server terminating
+- Modified the client to handle both user input and server terminating
+- Printed PDU on terminal
+- Added print statements to server/client terminating
+
 ## Version 0.1.6 - Finished mini-program
-- 
+- Modified client to handle the server terminating
+- Modified the client to handle both user input and server terminating
+- Printed PDU on terminal
+- Added print statements to server/client terminating
 
 ## Version 0.1.5 - Modified server to handle a client termination (partially)
 - When server detects a connection closed, it prints the connection was closed

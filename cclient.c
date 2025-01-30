@@ -2,10 +2,12 @@
 * myClient.c
 *
 * Writen by Prof. Smith, updated Jan 2023
-* Use at your own risk.  
+* Modified by Elizabeth Acevedo on 01/29/2025
+*
+* This program sets up a TCP client that connects to a server, sends data from
+* the standard input to the server, and processes messages received from the server.
 *
 *****************************************************************************/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -115,8 +117,8 @@ void checkArgs(int argc, char * argv[])
 void clientControl(int socketNum) {
 	printf("Enter data: ");
 	fflush(stdout);
+	// Wait for a socket to be ready
 	int c_sock = pollCall(-1); // Blocks until a socket is ready
-
 	
 	if (c_sock < 0) {
 		perror("pollCall");
