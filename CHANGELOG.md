@@ -1,3 +1,6 @@
+## Version 0.1.8 - Transition to Program#2
+- Any push after this will be part of Program#2 and no longer proogram#2's mini-program
+
 ## Version 0.1.7 - Added comments
 - Added comments to code
 - Modified client to handle the server terminating

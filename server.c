@@ -6,6 +6,7 @@
 *
 *****************************************************************************/
 
+/* Includes */
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -26,84 +27,63 @@
 #include "pdu_io.h"
 #include "pollLib.h"
 
+/* Definitions */
 #define MAXBUF 1024
 #define DEBUG_FLAG 1
 
-void recvFromClient(int clientSocket);
+/* Function Prototypes */
 int checkArgs(int argc, char *argv[]);
 void serverControl(int mainServerSocket, int clientSocket);
 void addNewSocket(int mainServerSocket);
-void processClient(int clientSocket);
+void processClient(int clientSocket); // renamed from recvFromClient
 
 int main(int argc, char *argv[])
 {
 	int mainServerSocket = 0;   //socket descriptor for the server socket
 	int clientSocket = 0;   	//socket descriptor for the client socket
 	int portNumber = 0;
-	
+
+	// Assignes the port number to variable
 	portNumber = checkArgs(argc, argv);
 	
 	//create the server socket
 	mainServerSocket = tcpServerSetup(portNumber);
 
-
 	addToPollSet(mainServerSocket);
 
 	while (1) {
-		serverControl(mainServerSocket, clientSocket);
-
+		serverControl(mainServerSocket, clientSocket);	// Handles processing connections
 	}
 	
 	/* close the sockets */
 	close(mainServerSocket);
 
-	
 	return 0;
 }
 
-void recvFromClient(int clientSocket)
-{
-	uint8_t dataBuffer[MAXBUF];
-	int messageLen = 0;
-	
-	// Now get the data from the client_socket
-	if ((messageLen = recvPDU(clientSocket, dataBuffer, MAXBUF)) < 0)
-	{
-		perror("recv call");
-		exit(-1);
-	}
-
-	if (messageLen > 0)
-	{
-		printf("Message received on socket: %d, length: %d Data: %s\n", clientSocket, messageLen, dataBuffer);
-	}
-	else if (messageLen == 0)
-	{
-		printf("Connection closed by other side: %d\n", clientSocket);
-		removeFromPollSet(clientSocket);
-		close(clientSocket);
-	}
-}
-
+/* Verifies the correct number of command line arguments */
 int checkArgs(int argc, char *argv[])
 {
 	// Checks args and returns port number
 	int portNumber = 0;
 
+	// If # of arguments is greater than 2, print usage message
 	if (argc > 2)
 	{
 		fprintf(stderr, "Usage %s [optional port number]\n", argv[0]);
 		exit(-1);
 	}
-	
+	// If # of arguments is 2, string argument converted to int and set as port number
+	else
 	if (argc == 2)
 	{
-		portNumber = atoi(argv[1]);
+		portNumber = atoi(argv[1]); 
 	}
 	
 	return portNumber;
 }
 
+/* Handles processing new and exisiting connections */
 void serverControl(int mainServerSocket, int clientSocket) {
 	// Wait for a socket to be ready
 	int resp_sock = pollCall(-1); // Blocks until a socket is ready
@@ -124,6 +104,7 @@ void serverControl(int mainServerSocket, int clientSocket) {
 	}
 }
 
+/* Adds a new socket to the poll set */
 void addNewSocket(int mainServerSocket) {
 	// Accept a new connection
 	int newSocket = tcpAccept(mainServerSocket, DEBUG_FLAG);
@@ -131,7 +112,40 @@ void addNewSocket(int mainServerSocket) {
 	addToPollSet(newSocket);
 }
 
+/* Processes data from an existing connection */
 void processClient(int clientSocket) {
 	// Receive data from the client
 	recvFromClient(clientSocket);
+}
+
+/* Checks and receives data from the client */
+void processClient(int clientSocket) // used to be recvFromClient
+{
+	uint8_t dataBuffer[MAXBUF];	// Buffer for the data from the client
+	int messageLen = 0;			// Length of the message received
+	
+	// Now get the data from the client_socket
+	if ((messageLen = recvPDU(clientSocket, dataBuffer, MAXBUF)) < 0)
+	{
+		perror("recv call");
+		exit(-1);
+	}
+
+	// Check if there is data to be received
+	if (messageLen > 0)
+	{
+		printf("Message received on socket: %d, length: %d Data: %s\n", clientSocket, messageLen, dataBuffer);
+
+		// Perform some action with the data
+		//
+		//
+		//
+	}
+	// Check if the connection is closed
+	else if (messageLen == 0)
+	{
+		printf("Connection closed by other side: %d\n", clientSocket);
+		removeFromPollSet(clientSocket);
+		close(clientSocket);
+	}
 }
