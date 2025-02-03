@@ -1,3 +1,9 @@
+## Version 0.1.9 - Created hashtable
+- Created files handle_table.c and .h
+- Testing for handle table worked in file:
+    - add, remove, get, print, free
+- Fixed errors on server
+
 ## Version 0.1.8 - Transition to Program#2
 - Any push after this will be part of Program#2 and no longer proogram#2's mini-program
 

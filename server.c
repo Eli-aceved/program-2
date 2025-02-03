@@ -112,13 +112,8 @@ void addNewSocket(int mainServerSocket) {
 	addToPollSet(newSocket);
 }
 
-/* Processes data from an existing connection */
-void processClient(int clientSocket) {
-	// Receive data from the client
-	recvFromClient(clientSocket);
-}
 
-/* Checks and receives data from the client */
+/* Processes data from an existing connection and receives data from the client */
 void processClient(int clientSocket) // used to be recvFromClient
 {
 	uint8_t dataBuffer[MAXBUF];	// Buffer for the data from the client

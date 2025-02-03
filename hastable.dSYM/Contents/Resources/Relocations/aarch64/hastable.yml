@@ -1,0 +1,14 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     '/Users/elizabethacevedo/Desktop/CPE464/Programs/Program#2/program-2/hastable'
+relocations:
+  - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _hash_func, symObjAddr: 0x0, symBinAddr: 0x1000037F0, symSize: 0x6C }
+  - { offsetInCU: 0x41, offset: 0x41, size: 0x8, addend: 0x0, symName: _hash_func, symObjAddr: 0x0, symBinAddr: 0x1000037F0, symSize: 0x6C }
+  - { offsetInCU: 0x77, offset: 0x77, size: 0x8, addend: 0x0, symName: _create_table, symObjAddr: 0x6C, symBinAddr: 0x10000385C, symSize: 0x90 }
+  - { offsetInCU: 0xBB, offset: 0xBB, size: 0x8, addend: 0x0, symName: _addHandleSockPair, symObjAddr: 0xFC, symBinAddr: 0x1000038EC, symSize: 0xD0 }
+  - { offsetInCU: 0x117, offset: 0x117, size: 0x8, addend: 0x0, symName: _getSockNum, symObjAddr: 0x1CC, symBinAddr: 0x1000039BC, symSize: 0xA4 }
+  - { offsetInCU: 0x169, offset: 0x169, size: 0x8, addend: 0x0, symName: _removeHandleSockPair, symObjAddr: 0x270, symBinAddr: 0x100003A60, symSize: 0xE8 }
+  - { offsetInCU: 0x1C5, offset: 0x1C5, size: 0x8, addend: 0x0, symName: _print_table, symObjAddr: 0x358, symBinAddr: 0x100003B48, symSize: 0xE4 }
+  - { offsetInCU: 0x221, offset: 0x221, size: 0x8, addend: 0x0, symName: _free_table, symObjAddr: 0x43C, symBinAddr: 0x100003C2C, symSize: 0xA8 }
+  - { offsetInCU: 0x299, offset: 0x299, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x4E4, symBinAddr: 0x100003CD4, symSize: 0x138 }
+...
