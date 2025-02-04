@@ -33,8 +33,8 @@ int tcpServerSetup(int serverPort)
 	struct sockaddr_in6 serverAddress;     
 	socklen_t serverAddressLen = sizeof(serverAddress);  
 
-	mainServerSocket= socket(AF_INET6, SOCK_STREAM, 0);
-	if(mainServerSocket < 0)
+	mainServerSocket = socket(AF_INET6, SOCK_STREAM, 0);
+	if (mainServerSocket < 0)
 	{
 		perror("socket call");
 		exit(1);

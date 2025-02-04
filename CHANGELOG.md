@@ -1,8 +1,13 @@
+## Version 0.1.11 - Client now takes 4 arguments
+- Client now takes 4 arguments (includes sender's handle)
+- Modified checkArgs to check for right amount of arguments
+- tcpClientSetup now takes arguments 2 and 3
+
 ## Version 0.1.10 - Finished hashtable testing
 - Handle table testing was successful
 - file testHT.c was created for testing purposes, resides in different directory now
 - Created commands.c and .h for functions that will create packets to send to server
-
+- Deleted anything that was named hastable (typo) [WAS NOT HERE BEFORE]
 
 ## Version 0.1.9 - Created hashtable
 - Created files handle_table.c and .h

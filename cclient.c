@@ -23,6 +23,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <stdint.h>
+#include <ctype.h>
 #include "networks.h"
 #include "safeUtil.h"
 #include "pdu_io.h"
@@ -45,7 +46,7 @@ int main(int argc, char * argv[])
 	
 	checkArgs(argc, argv);
 
-	socketNum = tcpClientSetup(argv[1], argv[2], DEBUG_FLAG);
+	socketNum = tcpClientSetup(argv[2], argv[3], DEBUG_FLAG);
 
 	setupPollSet();
 	addToPollSet(socketNum);
@@ -57,7 +58,6 @@ int main(int argc, char * argv[])
 	}
 	
 	close(socketNum); // Close the socket
-	
 	return 0;
 }
 
@@ -88,17 +88,17 @@ int readFromStdin(uint8_t * buffer)
 /* checkArgs: verifies the correct number of command line arguments */
 void checkArgs(int argc, char * argv[])
 {
-	/* check command line arguments  */
-	if (argc != 3)
-	{
-		printf("usage: %s host-name port-number \n", argv[0]);
+	/* check command line arguments */
+	if (argc != 4) {
+		printf("usage: %s <senders handle> <host-name> <port-number> \n", argv[0]);
 		exit(1);
 	}
 }
 
+
 /* Handles client control operations for the given socket number ()*/
 void clientControl(int socketNum) {
-	printf("Enter data: ");	// Prompts user to send multiple msgs after the server returns client msg
+	printf("$: ");	// Prompts user to send multiple msgs after the server returns client msg
 	fflush(stdout);			// Flushes the output buffer to ensure the prompt is displayed 
 	// Wait for a socket to be ready
 	int c_sock = pollCall(-1); // Blocks until a socket is ready

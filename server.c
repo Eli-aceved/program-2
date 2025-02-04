@@ -50,7 +50,6 @@ int main(int argc, char *argv[])
 	mainServerSocket = tcpServerSetup(portNumber);
 
 	addToPollSet(mainServerSocket);
-
 	while (1) {
 		serverControl(mainServerSocket, clientSocket);	// Handles processing connections
 	}

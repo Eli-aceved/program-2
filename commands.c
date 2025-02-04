@@ -18,6 +18,9 @@
 
 /* Function Prototypes */
 void sendMsgCmd(uint8_t *dataBuffer);
+// void broadcastCmd(uint8_t *dataBuffer);
+// void listCmd(uint8_t *dataBuffer);
+
 
 void sendMsgCmd(uint8_t *dataBuffer) {
     
