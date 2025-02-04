@@ -24,27 +24,32 @@
 #include <netdb.h>
 #include <stdint.h>
 #include <ctype.h>
+#include <stddef.h>
 #include "networks.h"
 #include "safeUtil.h"
 #include "pdu_io.h"
 #include "pollLib.h"
+#include "packetFactory.h"
 
 /* Definitions */
 #define MAXBUF 1024
 #define DEBUG_FLAG 1
+#define MAX_HANDLE_SIZE 100
 
 /* Function Prototypes */
 int readFromStdin(uint8_t *buffer);
-void checkArgs(int argc, char *argv[]);
-void clientControl(int socketNum);
-void processStdin(int socketNum);	// renamed from sendToServer
+void checkArgs(int argc, char *argv[], uint8_t *sender_handle);
+void clientControl(int socketNum, uint8_t *sender_handle);
+void processStdin(int socketNum, uint8_t *sender_handle);	// renamed from sendToServer
 void processMsgFromServer(int socketNum);
 
 int main(int argc, char * argv[])
 {
 	int socketNum = 0;         //socket descriptor
+	// Store the sender's handle
+	uint8_t sender_handle[MAX_HANDLE_SIZE] = {0};
 	
-	checkArgs(argc, argv);
+	checkArgs(argc, argv, sender_handle);
 
 	socketNum = tcpClientSetup(argv[2], argv[3], DEBUG_FLAG);
 
@@ -54,14 +59,14 @@ int main(int argc, char * argv[])
 
 	while (1) {
 		/* set up the TCP Client socket  */
-		clientControl(socketNum);
+		clientControl(socketNum, sender_handle);
 	}
 	
 	close(socketNum); // Close the socket
 	return 0;
 }
 
-int readFromStdin(uint8_t * buffer)
+int readFromStdin(uint8_t *buffer)
 {
 	char aChar = 0;
 	int inputLen = 0;        
@@ -86,18 +91,27 @@ int readFromStdin(uint8_t * buffer)
 }
 
 /* checkArgs: verifies the correct number of command line arguments */
-void checkArgs(int argc, char * argv[])
+void checkArgs(int argc, char * argv[], uint8_t *sender_handle)
 {
 	/* check command line arguments */
 	if (argc != 4) {
-		printf("usage: %s <senders handle> <host-name> <port-number> \n", argv[0]);
+		printf("usage: %s <sender's handle> <host-name> <port-number> \n", argv[0]);
 		exit(1);
 	}
+
+ 	// Store the sender's handle in the provided buffer
+	strncpy((char *)sender_handle, argv[1], MAX_HANDLE_SIZE - 1);
+
+	 // Check if the last character is a null terminator
+    if (sender_handle[MAX_HANDLE_SIZE - 1] != '\0') {
+        // Manually adds the null terminator if not already present
+        sender_handle[MAX_HANDLE_SIZE - 1] = '\0';
+    }
 }
 
 
 /* Handles client control operations for the given socket number ()*/
-void clientControl(int socketNum) {
+void clientControl(int socketNum, uint8_t *sender_handle) {
 	printf("$: ");	// Prompts user to send multiple msgs after the server returns client msg
 	fflush(stdout);			// Flushes the output buffer to ensure the prompt is displayed 
 	// Wait for a socket to be ready
@@ -115,31 +129,34 @@ void clientControl(int socketNum) {
 	// Processes existing connections
 	else if (c_sock == STDIN_FILENO) {
 		// Existing connection
-		processStdin(socketNum);
+		processStdin(socketNum, sender_handle);
 	}
 
 }
 
 /* Processes the standard input */
-void processStdin(int socketNum) // Used to be called sendToServer
+void processStdin(int socketNum, uint8_t *sender_handle) // Used to be called sendToServer
 {
-	uint8_t sendBuf[MAXBUF];		//data buffer
-	int sendLen = 0;        		//amount of data to send
-	int sent = 0;            		//actual amount of data sent/* get the data and send it   */
+	uint8_t readBuff[MAXBUF];		//data buffer
+	int readLen = 0;        		//amount of data to read from the user input
 	
 	// Read the data from the standard input
-	sendLen = readFromStdin(sendBuf);
-	printf("read: %s string len: %d (including null)\n", sendBuf, sendLen);
+	readLen = readFromStdin(readBuff);
 	
+	uint8_t destPackBuff[MAXBUF];	// Buffer to store the data that will be sent to the server
+	size_t packet_len = 0;			// Length of the packet
+	
+	// Creates packets for every command type
+	packet_len = readCommand(readBuff, destPackBuff, sender_handle); // sendBuf holds the data that was typed in by the user
+
 	// Send the data to the server
-	sent =  sendPDU(socketNum, sendBuf, sendLen);
-	if (sent < 0)
+	sendPDU(socketNum, destPackBuff, packet_len);
+	if (read < 0)
 	{
 		perror("send call");
 		exit(-1);
 	}
 	
-	printf("Amount of data sent is: %d\n", sent);//WILL BE REMOVED
 }
 
 /* Processes messages received from server and displays them on client terminal */

@@ -1,3 +1,11 @@
+## Version 0.1.12 - Send message function complete
+- Renamed commands.c and .h to packetFactory
+- Created function to check for command type and call the command function to create a packet
+- Program currently sends packet (server doesn't receive yet)
+- Output is looking promising during debugging
+- Prints packet length
+- Cleaned up and modified code in cclient (processStdin())
+
 ## Version 0.1.11 - Client now takes 4 arguments
 - Client now takes 4 arguments (includes sender's handle)
 - Modified checkArgs to check for right amount of arguments
