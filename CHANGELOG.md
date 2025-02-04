@@ -1,3 +1,9 @@
+## Version 0.1.10 - Finished hashtable testing
+- Handle table testing was successful
+- file testHT.c was created for testing purposes, resides in different directory now
+- Created commands.c and .h for functions that will create packets to send to server
+
+
 ## Version 0.1.9 - Created hashtable
 - Created files handle_table.c and .h
 - Testing for handle table worked in file:

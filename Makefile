@@ -25,5 +25,5 @@ cleano:
 	rm -f *.o
 
 clean:
-	rm -f server cclient *.o
+	rm -f server cclient handle_table *.o
 

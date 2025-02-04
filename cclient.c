@@ -33,8 +33,8 @@
 #define DEBUG_FLAG 1
 
 /* Function Prototypes */
-int readFromStdin(uint8_t * buffer);
-void checkArgs(int argc, char * argv[]);
+int readFromStdin(uint8_t *buffer);
+void checkArgs(int argc, char *argv[]);
 void clientControl(int socketNum);
 void processStdin(int socketNum);	// renamed from sendToServer
 void processMsgFromServer(int socketNum);
