@@ -1,3 +1,8 @@
+## Version 0.1.14 - Saving before major line shifting
+- Saving progress before major changes
+- Fixing buffer allocation in sendMsgCmd()
+
+
 ## Version 0.1.13 - sendMsgCmd() now repurposed for unicast and multicast
 - mutlicast code implemented in the same function as unicast
 - Fixed some errors
