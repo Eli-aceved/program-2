@@ -1,3 +1,7 @@
+## Version 0.1.15 - Successfully send %M%C packets to server
+- Finished sendMsgCmd(), although needs some cleaning up
+- Created new functions in server to handle flags and next steps done in the server 
+
 ## Version 0.1.14 - Saving before major line shifting
 - Saving progress before major changes
 - Fixing buffer allocation in sendMsgCmd()

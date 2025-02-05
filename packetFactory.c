@@ -18,8 +18,8 @@
 #define MAX_MSG_SIZE 200
 
 /* Function Prototypes */
-size_t sendMsgCmd(uint8_t **saveptr, uint8_t *sender_handle);
-size_t broadcastCmd(uint8_t *dataBuffer);
+size_t sendMsgCmd(uint8_t *packetBuffer, uint8_t **saveptr, uint8_t *sender_handle, int isMulticast);
+size_t broadcastCmd(uint8_t **saveptr, uint8_t *sender_handle);
 void listCmd(uint8_t *dataBuffer);
 
 
@@ -39,28 +39,28 @@ size_t readCommand(uint8_t *refBuff, uint8_t *dataBuffer, uint8_t *sender_handle
     }
 
     // Check if the token is send message
-    if (strcmp(token, "%M") || strcmp(token, "%m")) {
+    if (strcmp(token, "%M") == 0 || strcmp(token, "%m") == 0) {
         printf("Send message command entered\n");
         // Call the sendMsgCmd function
-        packet_len = sendMsgCmd((uint8_t **)&saveptr, sender_handle);
+        packet_len = sendMsgCmd(dataBuffer, (uint8_t **)&saveptr, sender_handle, 0);
     }
         // Check if the token is send message
-    else if (strcmp(token, "%C") || strcmp(token, "%c")) {
+    else if (strcmp(token, "%C") == 0 || strcmp(token, "%c") == 0) {
         printf("Mulitcast command entered\n");
         // Call the sendMsgCmd function
-        packet_len = sendMsgCmd((uint8_t **)&saveptr, sender_handle);
+        packet_len = sendMsgCmd(dataBuffer, (uint8_t **)&saveptr, sender_handle, 1);
     }
         // Check if the token is send message
-    else if (strcmp(token, "%B") || strcmp(token, "%b")) {
+    else if (strcmp(token, "%B") == 0 || strcmp(token, "%b") == 0) {
         printf("Broadcast command entered\n");
         // Call the broadcastCmd function
-        // packet_len = broadcastCmd(NULL, &saveptr);
+        packet_len = broadcastCmd((uint8_t **)&saveptr, sender_handle);
     }
         // Check if the token is send message
     else if (strcmp(token, "%L") || strcmp(token, "%l")) {
         printf("List of handles command entered\n");
         // Call the listCmd function
-        // packet_len = listCmd(NULL, &saveptr);
+        //packet_len = listCmd((uint8_t **)&saveptr, sender_handle);
     }
     else {
         printf("Invalid command entered\n");
@@ -70,17 +70,11 @@ size_t readCommand(uint8_t *refBuff, uint8_t *dataBuffer, uint8_t *sender_handle
 
 }
 
-size_t sendMsgCmd(uint8_t **saveptr, uint8_t *sender_handle) {
-    // Create a new buffer to store the command
-    uint8_t *packetBuffer = malloc(strlen((const char *)*saveptr) + 1);
-    if (packetBuffer == NULL) {
-        perror("Error allocating memory for new buffer");
-        exit(-1);
-    }
-
-    // add flag into buffer
-    uint8_t flag = 5;
-    packetBuffer[0] = flag;
+size_t sendMsgCmd(uint8_t *packetBuffer, uint8_t **saveptr, uint8_t *sender_handle, int isMulticast) { // Issues with buffer allocation and size
+    uint8_t Mflag = 5; // Flag for send message command
+    uint8_t Cflag = 6; // Flag for multicast command
+    int packetIndex = 0;
+  
 
     // Print sender handle
     printf("Sender handle: %s\n", sender_handle);   // Debugging
@@ -90,21 +84,34 @@ size_t sendMsgCmd(uint8_t **saveptr, uint8_t *sender_handle) {
         printf("Error: Sender handle exceeds 100 bytes\n");
         return 0;
     }
+
+    // Add flag into buffer depending on command
+    if (isMulticast) {
+        // add flag into buffer
+        printf("Multicast command entered (flag check)\n");
+        packetBuffer[packetIndex++] = Cflag;
+    }
+    else {
+        // add flag into buffer
+        printf("Unicast command entered (flag check)\n");
+        packetBuffer[packetIndex++] = Mflag;
+    }
+
     // Copy sender handle length into buffer (1 byte)
-    memcpy(&packetBuffer[1], &senderhandle_len, sizeof(senderhandle_len));
+    memcpy(&packetBuffer[packetIndex++], &senderhandle_len, sizeof(senderhandle_len));
     // Copy sender handle into buffer (variable length)
-    memcpy(&packetBuffer[2], sender_handle, senderhandle_len);  
+    memcpy(&packetBuffer[packetIndex], sender_handle, senderhandle_len); 
+    packetIndex += senderhandle_len;
+    
 
     // Gets next token after command (either handle or number of handles)
     char *token = strtok_r(NULL, " ", (char **)saveptr);
     if (token == NULL) {
         printf("No handle entered\n");
-        //free(packetBuffer);
         return 0;
     }
-    
+
     uint8_t desthandle_len = 0;
-    uint8_t offset = 3 + senderhandle_len;  // Start after sender handle
     // Check if the token is a number
     if (isdigit(token[0])) {
         // Multicast command: continue creating packet
@@ -112,22 +119,25 @@ size_t sendMsgCmd(uint8_t **saveptr, uint8_t *sender_handle) {
         long num_handles = strtol(token, &endptr, 10); //Grabs number of destination handles
         if (*endptr == '\0' && num_handles >= 2 && num_handles <= 9) { // must be numbers 2-9 for %C command
             printf("Number of handles: %ld\n", num_handles);
+            
+            // Copy number of handles into buffer (1 byte)
+            memcpy(&packetBuffer[packetIndex++], &num_handles, sizeof(num_handles)); // Good if i want to implement %C here too
+            
             // Grab destination handles and add into packet buffer
             for (int i = 0; i < num_handles; i++) { // Loop through number of handles to grab and add to packet buffer
                 token = strtok_r(NULL, " ", (char **)saveptr);
                 if (token == NULL) {
                     printf("Not enough handles entered\n");
-                    free(packetBuffer);
                     return 0;
                 }
                 char *destination_handle = token;
                 // Get destination handle lengths
                 desthandle_len = strlen(destination_handle);
                 // Copy handle length into buffer (1 byte)
-                memcpy(&packetBuffer[offset], &desthandle_len, sizeof(desthandle_len));
+                memcpy(&packetBuffer[packetIndex++], &desthandle_len, sizeof(desthandle_len));
                 // Copy handle into buffer (variable length)
-                memcpy(&packetBuffer[offset], destination_handle, desthandle_len);
-                offset += desthandle_len;
+                memcpy(&packetBuffer[packetIndex], destination_handle, desthandle_len);
+                packetIndex += desthandle_len;
             }
         }
         else { 
@@ -139,18 +149,17 @@ size_t sendMsgCmd(uint8_t **saveptr, uint8_t *sender_handle) {
         // Unicast command: continue creating packet
         uint8_t num_handles = 1;
         // Copy number of handles into buffer (1 byte)
-        memcpy(&packetBuffer[offset], &num_handles, sizeof(num_handles)); // Good if i want to implement %C here too
+        memcpy(&packetBuffer[packetIndex++], &num_handles, sizeof(num_handles)); // Good if i want to implement %C here too
 
         char *destination_handle = token;
         // Get destination handle length
         desthandle_len = strlen(destination_handle);
         // Copy handle length into buffer (1 byte)
-        memcpy(&packetBuffer[offset], &desthandle_len, sizeof(desthandle_len));
-        offset += sizeof(desthandle_len);
+        memcpy(&packetBuffer[packetIndex++], &desthandle_len, sizeof(desthandle_len));
 
         // Copy handle into buffer (variable length)
-        memcpy(&packetBuffer[offset], destination_handle, desthandle_len); 
-        offset += desthandle_len;
+        memcpy(&packetBuffer[packetIndex], destination_handle, desthandle_len); 
+        packetIndex += desthandle_len;
     }
 
     uint8_t message[MAX_MSG_SIZE] = {0};
@@ -177,19 +186,19 @@ size_t sendMsgCmd(uint8_t **saveptr, uint8_t *sender_handle) {
     printf("Full Message: %s\n", message);  // Debugging
 
     // Copy message into buffer
-    memcpy(&packetBuffer[offset], message, message_len); // Offset adjusted for sender handle length for more than 1 handle
-    offset += message_len;
+    memcpy(&packetBuffer[packetIndex], message, message_len); // Offset adjusted for sender handle length for more than 1 handle
+    packetIndex += message_len;
 
     // Return the packet buffer length
     size_t packetBuffer_len = strlen((char *)packetBuffer);
 
-    printf("Packet buffer length: %zu\n", packetBuffer_len);  // Debugging
-    printf("Packet buffer: %s\n", packetBuffer);  // Debugging
+    printf("Packet buffer length: %zu, %d\n", packetBuffer_len, packetIndex);  // Debugging
+    printf("Packet buffer: %u%u%s\n", packetBuffer[0], packetBuffer[1], &packetBuffer[2]);  // Debugging
     return packetBuffer_len;
 }
 
 
-size_t broadcastCmd(uint8_t *dataBuffer) {
+size_t broadcastCmd(uint8_t **saveptr, uint8_t *sender_handle) {
 
 }
 

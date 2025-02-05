@@ -22,6 +22,7 @@
 #include <stddef.h>
 #include <ctype.h>
 
+
 /* Function Prototypes */
 size_t readCommand(uint8_t *refBuff, uint8_t *dataBuffer, uint8_t *sender_handle);
 

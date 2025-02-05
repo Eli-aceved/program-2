@@ -36,6 +36,8 @@ int checkArgs(int argc, char *argv[]);
 void serverControl(int mainServerSocket, int clientSocket);
 void addNewSocket(int mainServerSocket);
 void processClient(int clientSocket); // renamed from recvFromClient
+void flagCheck(uint8_t *dataBuffer, int clientSocket, int messageLen);
+
 
 int main(int argc, char *argv[])
 {
@@ -115,7 +117,7 @@ void addNewSocket(int mainServerSocket) {
 /* Processes data from an existing connection and receives data from the client */
 void processClient(int clientSocket) // used to be recvFromClient
 {
-	uint8_t dataBuffer[MAXBUF];	// Buffer for the data from the client
+	uint8_t dataBuffer[MAXBUF] = {0};	// Buffer for the data from the client
 	int messageLen = 0;			// Length of the message received
 	
 	// Now get the data from the client_socket
@@ -124,16 +126,12 @@ void processClient(int clientSocket) // used to be recvFromClient
 		perror("recv call");
 		exit(-1);
 	}
-
+	printf("Buffer received at server: %s\n", dataBuffer);
 	// Check if there is data to be received
 	if (messageLen > 0)
 	{
-		printf("Message received on socket: %d, length: %d Data: %s\n", clientSocket, messageLen, dataBuffer);
-
-		// Perform some action with the data
-		//
-		//
-		//
+		//printf("Message received on socket: %d, length: %d Data: %s\n", clientSocket, messageLen, dataBuffer);
+		flagCheck(dataBuffer);
 	}
 	// Check if the connection is closed
 	else if (messageLen == 0)
@@ -143,3 +141,67 @@ void processClient(int clientSocket) // used to be recvFromClient
 		close(clientSocket);
 	}
 }
+
+void flagCheck(uint8_t *dataBuffer, int clientSocket, int messageLen) {
+	if (dataBuffer[0] == 5) { // Send message flag
+		printf("Send message flag received by server.\n");
+		processMCMsgs(dataBuffer, clientSocket, messageLen);
+	}
+	else if (dataBuffer[0] == 6) { // Multicast flag
+		printf("Multicast flag received by server.\n");
+	}
+	else if (dataBuffer[0] == 4) { // Broadcast flag
+		printf("Broadcast flag received by server.\n");
+	}
+	else if (dataBuffer[0] == 10) { // List of handles flag
+		printf("List of handles flag received by server.\n");
+	}
+	else {
+		printf("Invalid flag received by server.\n");
+	}
+}
+
+ /* Processes messages received from server and displays them on client terminal */
+/*void processMCMsgs(uint8_t *dataBuffer, int clientSocket, int messageLen) {
+	int packetIndex = 1; // Skip the flag, start at the sender handle/number of handles
+	// Parse buffer to check for num handles
+	// Check how many handles are in dataBuffer[packetIndex]
+	uint8_t num_handles = dataBuffer[packetIndex]; // 1 byte
+	packetIndex++; // Increment to the next byte
+	if (num_handles > 1) { // Multicast
+		// Parse buffer for destination handles
+		for (int i = 0; i < num_handles; i++) {
+			uint8_t desthandle_len = dataBuffer[packetIndex]; // 1 byte
+			packetIndex++; // Increment to the next byte
+			
+
+		}
+		// add to handle table 
+		// access handle table to figure what socket to send to
+
+		// Parse buffer for message
+
+		// figure out how to send message to each socket
+	}
+	else if (num_handles == 1) { // Unicast
+		// Parse buffer for destination handles
+		// add to handle table 
+		// access handle table to figure what socket to send to
+
+		// Parse buffer for message
+
+		// figure out how to send message to each socket
+	}
+	
+
+
+	// Parse buffer for destination handles
+	// add to handle table 
+	// access handle table to figure what socket to send to
+
+	// Parse buffer for message
+
+	// figure out how to send message to each socket
+
+
+}*/

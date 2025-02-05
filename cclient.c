@@ -32,7 +32,7 @@
 #include "packetFactory.h"
 
 /* Definitions */
-#define MAXBUF 1024
+#define MAXBUF 1402
 #define DEBUG_FLAG 1
 #define MAX_HANDLE_SIZE 100
 
@@ -137,12 +137,12 @@ void clientControl(int socketNum, uint8_t *sender_handle) {
 /* Processes the standard input */
 void processStdin(int socketNum, uint8_t *sender_handle) // Used to be called sendToServer
 {
-	uint8_t readBuff[MAXBUF];		//data buffer
+	uint8_t readBuff[MAXBUF] = {0};		//data buffer
 	
 	// Read the data from the standard input
 	readFromStdin(readBuff);
 	
-	uint8_t destPackBuff[MAXBUF];	// Buffer to store the data that will be sent to the server
+	uint8_t destPackBuff[MAXBUF] = {0};	// Buffer to store the data that will be sent to the server
 	size_t packet_len = 0;			// Length of the packet
 	
 	// Creates packets for every command type
