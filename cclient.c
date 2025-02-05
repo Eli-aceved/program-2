@@ -138,10 +138,9 @@ void clientControl(int socketNum, uint8_t *sender_handle) {
 void processStdin(int socketNum, uint8_t *sender_handle) // Used to be called sendToServer
 {
 	uint8_t readBuff[MAXBUF];		//data buffer
-	int readLen = 0;        		//amount of data to read from the user input
 	
 	// Read the data from the standard input
-	readLen = readFromStdin(readBuff);
+	readFromStdin(readBuff);
 	
 	uint8_t destPackBuff[MAXBUF];	// Buffer to store the data that will be sent to the server
 	size_t packet_len = 0;			// Length of the packet

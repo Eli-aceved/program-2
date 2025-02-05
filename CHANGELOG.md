@@ -1,3 +1,9 @@
+## Version 0.1.13 - sendMsgCmd() now repurposed for unicast and multicast
+- mutlicast code implemented in the same function as unicast
+- Fixed some errors
+- Tested current code. Correctly checks if input after comman-type is an integer or a handle and prints statement
+- Renamed variables and file names for packetFactory
+
 ## Version 0.1.12 - Send message function complete
 - Renamed commands.c and .h to packetFactory
 - Created function to check for command type and call the command function to create a packet

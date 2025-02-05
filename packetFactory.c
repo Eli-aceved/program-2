@@ -75,7 +75,6 @@ size_t sendMsgCmd(uint8_t **saveptr, uint8_t *sender_handle) {
     uint8_t *packetBuffer = malloc(strlen((const char *)*saveptr) + 1);
     if (packetBuffer == NULL) {
         perror("Error allocating memory for new buffer");
-        free(packetBuffer);
         exit(-1);
     }
 
@@ -92,27 +91,76 @@ size_t sendMsgCmd(uint8_t **saveptr, uint8_t *sender_handle) {
     // Copy sender handle into buffer (variable length)
     memcpy(&packetBuffer[2], sender_handle, senderhandle_len);  
 
-    uint8_t num_handles = 1;
-    // Copy number of handles into buffer (1 byte)
-    memcpy(&packetBuffer[2 + senderhandle_len], &num_handles, sizeof(num_handles)); // Good if i want to implement %C here too
 
-    // Parse buffer using strtok() to create a packet and copy it into packetBuffer
-    // Gets next token after command
+    // Gets next token after command (either handle or number of handles)
     char *token = strtok_r(NULL, " ", (char **)saveptr);
     if (token == NULL) {
         printf("No handle entered\n");
         //free(packetBuffer);
         return 0;
     }
-    printf("Second token: %s\n", token);
-    char *destination_handle = token;
+    printf("test1\n");
+
+    // Check if the token is a number
+    if (isdigit(token[0])) {
+        printf("test2\n");
+        // Multicast command: continue creating packet
+        printf("token was an integer\n");
+        char *endptr;
+        long num_handles = strtol(token, &endptr, 10); //Grabs number of destination handles
+        if (*endptr == '\0' && num_handles >= 2 && num_handles <= 9) { // must be numbers 2-9 for %C command
+            printf("Number of handles: %ld\n", num_handles);
+            // Grab destination handles and add into packet buffer
+            for (int i = 0; i < num_handles; i++) { // Loop through number of handles to grab and add to packet buffer
+                token = strtok_r(NULL, " ", (char **)saveptr);
+                if (token == NULL) {
+                    printf("Not enough handles entered\n");
+                    //free(packetBuffer);
+                    return 0;
+                }
+                char *destination_handle = token;
+                // Get destination handle lengths
+                uint8_t desthandle_len = strlen(destination_handle);
+                // Copy handle length into buffer (1 byte)
+                memcpy(&packetBuffer[3 + senderhandle_len], &desthandle_len, sizeof(desthandle_len));
+                // Copy handle into buffer (variable length)
+                memcpy(&packetBuffer[4 + senderhandle_len], destination_handle, desthandle_len);
+            }
+            printf("test3\n");
+        }
+        else { 
+            printf("Invalid number of handles entered\n");
+            return 0;
+        }
+    }
+    else {
+        printf("test4\n");
+        printf("Token was not an integer, its a handle\n");
+        // Unicast command: continue creating packet
+        uint8_t num_handles = 1;
+        // Copy number of handles into buffer (1 byte)
+        memcpy(&packetBuffer[2 + senderhandle_len], &num_handles, sizeof(num_handles)); // Good if i want to implement %C here too
+
+
+        char *destination_handle = token;
+        // Get destination handle length
+        uint8_t handle_len = strlen(destination_handle);
+        // Copy handle length into buffer (1 byte)
+        memcpy(&packetBuffer[3], &handle_len, sizeof(handle_len));
+
+        // Copy handle into buffer (variable length)
+        memcpy(&packetBuffer[4], destination_handle, handle_len); 
+
+
+    }
+    //printf("Second token: %s\n", token);
+    printf("test5\n");
+
 
     uint8_t message[MAX_MSG_SIZE] = {0};
     int message_len = 0;
     // Get next token: message
     while ((token = strtok_r(NULL, " ", (char **)saveptr)) != NULL) {
-        printf("Token: %s\n", token);
-        
         // Check if adding the token won't overflow the message buffer
         int token_len = strlen(token);
         if (message_len + token_len + 1 < MAX_MSG_SIZE) { // +1 for the space or null terminator
@@ -121,7 +169,6 @@ size_t sendMsgCmd(uint8_t **saveptr, uint8_t *sender_handle) {
                 message[message_len] = ' ';  // Add a space before the next token if it's not the first token
                 message_len++;  // Increment position for the space
             }
-
             memcpy(&message[message_len], token, token_len);  // Copy token into message buffer
             message_len += token_len;  // Update the message length
         } else {
@@ -129,24 +176,16 @@ size_t sendMsgCmd(uint8_t **saveptr, uint8_t *sender_handle) {
             printf("Message too large. Exceeds 200 bytes\n");
             break;  // Optionally, break if you can't add more tokens
         }
-
     }
     message[message_len] = '\0';  // Null terminate the message
-    printf("Full Message: %s\n", message);  // Debugging
-
-    uint8_t handle_len = strlen(destination_handle);
-    // Copy handle length into buffer (1 byte)
-    memcpy(&packetBuffer[3], &handle_len, sizeof(handle_len));
-
-    // Copy handle into buffer (variable length)
-    memcpy(&packetBuffer[4], destination_handle, handle_len); 
+    //printf("Full Message: %s\n", message);  // Debugging
 
     // Copy message into buffer
-    memcpy(&packetBuffer[4 + handle_len], message, message_len); // Offset adjusted for sender handle length for more than 1 handle
+    memcpy(&packetBuffer[4], message, message_len); // Offset adjusted for sender handle length for more than 1 handle
 
     // Return the packet buffer length
     size_t packetBuffer_len = strlen((char *)packetBuffer);
-    
+
     printf("Packet buffer length: %zu\n", packetBuffer_len);  // Debugging
     return packetBuffer_len;
 }
