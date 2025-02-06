@@ -1,3 +1,10 @@
+## Version 0.1.16 - %M & %C command testing
+- Created table to be globally accesible
+- Deleted no longer needed lines of code in pdu_io.c
+- At server, created functions flagCheck(), processMCMsgs() to handle flags and send individual packets to each client for %M & %C
+- At cclient, created flagCheck(), sendFlag1(), and printMCMsgs() which checks for flags in packets received from the server, sends initial flag when client attempts to connect to the server (sends flag to server), and prints the sende's handle and message received from the server onto the client terminal 
+
+
 ## Version 0.1.15 - Successfully send %M%C packets to server
 - Finished sendMsgCmd(), although needs some cleaning up
 - Created new functions in server to handle flags and next steps done in the server 

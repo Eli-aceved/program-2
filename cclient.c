@@ -30,6 +30,7 @@
 #include "pdu_io.h"
 #include "pollLib.h"
 #include "packetFactory.h"
+#include "handle_table.h"
 
 /* Definitions */
 #define MAXBUF 1402
@@ -42,6 +43,11 @@ void checkArgs(int argc, char *argv[], uint8_t *sender_handle);
 void clientControl(int socketNum, uint8_t *sender_handle);
 void processStdin(int socketNum, uint8_t *sender_handle);	// renamed from sendToServer
 void processMsgFromServer(int socketNum);
+void flagCheck(uint8_t *dataBuffer, int clientSocket, int messageLen);
+void sendFlag1(int socketNum, uint8_t *sender_handle);
+void printMCMsgs(uint8_t *dataBuffer);
+
+
 
 int main(int argc, char * argv[])
 {
@@ -53,8 +59,11 @@ int main(int argc, char * argv[])
 
 	socketNum = tcpClientSetup(argv[2], argv[3], DEBUG_FLAG);
 
+
 	setupPollSet();
 	addToPollSet(socketNum);
+	sendFlag1(socketNum, (uint8_t*)argv[1]);
+
 	addToPollSet(STDIN_FILENO);
 
 	while (1) {
@@ -123,8 +132,8 @@ void clientControl(int socketNum, uint8_t *sender_handle) {
 	}
 	// Accepts new connections and adds them to the poll set
 	else if (c_sock == socketNum) {
-			// New connection
-			processMsgFromServer(socketNum);
+		// New connection
+		processMsgFromServer(socketNum);
 	}
 	// Processes existing connections
 	else if (c_sock == STDIN_FILENO) {
@@ -160,18 +169,13 @@ void processStdin(int socketNum, uint8_t *sender_handle) // Used to be called se
 
 /* Processes messages received from server and displays them on client terminal */
 void processMsgFromServer(int socketNum) {
-	uint8_t dataBuffer[MAXBUF];	// Buffer to store the data received from the server
+	uint8_t dataBuffer[MAXBUF] = {0};	// Buffer to store the data received from the server
 	int bytesRead;				// Number of bytes read
-	uint16_t pduLength = 0;		// Length of the PDU
 
 	// Receive the data from the server
-	bytesRead = safeRecv(socketNum, dataBuffer, MAXBUF, 0);
+	bytesRead = recvPDU(socketNum, dataBuffer, MAXBUF);
 
-	// Extract the length of the PDU
-	memcpy(&pduLength, dataBuffer, 2);
-
-	// Convert to host byte order
-	pduLength = ntohs(pduLength);
+	flagCheck(dataBuffer, socketNum, bytesRead);
 
 	// Ensure connection is still open
 	if (bytesRead == 0) {
@@ -181,6 +185,57 @@ void processMsgFromServer(int socketNum) {
 	}
 	// Display the message received from the server if there are bytes to read
 	else if (bytesRead > 0) {
-		printf("\nMessage received from server: %s + Length from server: %u\n", &dataBuffer[2], pduLength);//WILL BE REMOVED
+		printf("\nMessage received from server of length: %u\n", bytesRead);//WILL BE REMOVED
 	}
+}
+
+void flagCheck(uint8_t *dataBuffer, int clientSocket, int messageLen) {
+	if (dataBuffer[0] == 5) { // Add handle flag
+		printf("\nSend message flag received by client.\n");
+		printMCMsgs(dataBuffer);
+	}
+	else if (dataBuffer[0] == 6) {
+		printf("\nMulticast flag received by client.\n");
+		printMCMsgs(dataBuffer);
+	}
+	else {
+		printf("\nInvalid flag received by client.\n");
+	}
+}
+
+/* Initial flag when client attempts to connect to the server (sends flag to server)*/
+void sendFlag1(int socketNum, uint8_t *sender_handle) {
+	uint8_t packetBuffer[MAX_HANDLE_SIZE] = {0};	// Buffer to store the data that will be sent to the server
+	uint8_t flag = 1;
+	uint8_t handle_len = strlen((char *)sender_handle);
+
+	packetBuffer[0] = flag;
+	packetBuffer[1] = handle_len;
+
+	memcpy(&packetBuffer[2], sender_handle, handle_len);
+
+	sendPDU(socketNum, packetBuffer, handle_len + 2);
+
+}
+
+/* Prints the message received from the server onto the client terminal */
+void printMCMsgs(uint8_t *dataBuffer) {
+	uint8_t senderHandle[MAX_HANDLE_SIZE] = {0};
+	int packetIndex = 1; // Skip the flag, start at the sender handle/number of handles
+	uint8_t lengthofsenderhandle = dataBuffer[packetIndex++]; // 1 byte
+	memcpy(senderHandle, &dataBuffer[packetIndex], lengthofsenderhandle);
+	packetIndex += lengthofsenderhandle;
+
+	// Check how many handles are in packet
+	uint8_t num_handles = dataBuffer[packetIndex++]; // 1 byte
+	
+	uint8_t lengthofdestinationhandle = 0;
+	// Parse buffer to skip dest. handles
+	for (int i = 0; i < num_handles && i < MAX_HANDLE_SIZE; i++) {
+		lengthofdestinationhandle = dataBuffer[packetIndex++]; // 1 byte
+		packetIndex += lengthofdestinationhandle;
+	};
+	
+	printf("%s: %s\n", senderHandle, &dataBuffer[packetIndex]);
+
 }

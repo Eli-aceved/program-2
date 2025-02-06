@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "polllib.h": "c"
+        "polllib.h": "c",
+        "handle_table.h": "c"
     }
 }

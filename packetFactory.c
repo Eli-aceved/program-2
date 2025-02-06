@@ -199,7 +199,6 @@ size_t sendMsgCmd(uint8_t *packetBuffer, uint8_t **saveptr, uint8_t *sender_hand
 
 
 size_t broadcastCmd(uint8_t **saveptr, uint8_t *sender_handle) {
-
 }
 
 

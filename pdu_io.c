@@ -93,9 +93,6 @@ int recvPDU(int socketNumber, uint8_t *dataBuffer, int bufferSize) {
         return 0;
     }
 
-    // Send buffer to the client 
-    safeSend(socketNumber, pduBuff, pduLength, 0);
-
     return dataBytesReceived;   // Return the length of the payload
 }
 
