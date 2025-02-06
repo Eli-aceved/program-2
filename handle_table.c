@@ -154,6 +154,31 @@ void removeHandleSockPair(const char *handle) {
     }
 }
 
+/* Removes a key-value pair from the table by socket number */
+void removeHandleSockPairBySocket(int socket) {
+    for (int i = 0; i < handletable->size; i++) {
+        ClientNode *current = handletable->buckets[i];
+        ClientNode *prev = NULL;
+        // Traverse the linked list
+        while (current) {
+            if (current->socket == socket) {
+                if (prev) {
+                    prev->next = current->next;
+                }
+                else {
+                    handletable->buckets[i] = current->next;
+                }
+                free(current->handle);
+                free(current);
+                handletable->count--;
+                return;
+            }
+            prev = current;
+            current = current->next;
+        }
+    }
+}
+
 /* Retrieves the value associated with a given key */
 int getSockNum(const char *handle) {
     unsigned int index = hash_func(handle, handletable->size);
@@ -168,70 +193,43 @@ int getSockNum(const char *handle) {
     return -1; // Socket not found
 }
 
+/* Retrieves all the keys in the table */
+char **get_all_handles(int *num_handles) {
+    // Step 1: Count total number of handles
+    int count = handletable->count;
+    *num_handles = count;
 
-/* Prints the contents of the table */
-/*
-void print_table() {
-    printf("\n");
-    for (int i = 0; i < handletable->size; i++) {
-        printf("Bucket %d: ", i);
+    // Step 2: Allocate memory for an array of string pointers
+    char **handle_list = malloc(count * sizeof(char *));
+    if (!handle_list) {
+        perror("Error allocating memory for handle list");
+        return NULL;
+    }
+
+    // Step 3: Iterate through the hash table and copy handles
+    int index = 0;
+    for (int i = 0; i < handletable->size; i++) {   // iterates over the buckets
         ClientNode *current = handletable->buckets[i];
-        while (current) {
-            printf("(%s, %d) -> ", current->handle, current->socket);
+        while (current) {                           // iterates through the linked list
+            handle_list[index] = strdup(current->handle);  // Copy handle
+            if (!handle_list[index]) {
+                perror("Error duplicating handle string");
+                // Free previously allocated memory before returning NULL
+                for (int j = 0; j < index; j++) {
+                    free(handle_list[j]);
+                }
+                free(handle_list);
+                return NULL;
+            }
+            index++;
             current = current->next;
         }
-        printf("NULL\n");   // Cosmetic Null
     }
-}
-*/
 
-/***************** Anything below was used for testing purposes ********************/
-/* Frees the memory allocated for the table */
-void free_table() {
-    for (int i = 0; i < handletable->size; i++) {
-        ClientNode *current = handletable->buckets[i];
-        while (current) {
-            ClientNode *temp = current;
-            current = current->next;
-            free(temp->handle);
-            free(temp);
-        }
-    }
-    free(handletable->buckets);
-    free(handletable);
+    return handle_list;
 }
 
-/*
-int main(int argc, char * argv[]) {
-    HandleTable *table = create_table(INIT_TABLE_SIZE);
-    printf("Table created with added handles\n");
-
-    addHandleSockPair(table, "Engineer831", 2);
-    addHandleSockPair(table, "HelloWorldUserUsesThisUsername1", 4);
-    addHandleSockPair(table, "SinisterBaloney", 6);
-    addHandleSockPair(table, "DestroyerEli31", 8);
-    addHandleSockPair(table, "VaccuumCleaner123", 3);
-    addHandleSockPair(table, "ApplesNBananas934", 7);
-    addHandleSockPair(table, "StarryNight", 9);
-    addHandleSockPair(table, "BaconEggSandwich45869335", 5);
-    addHandleSockPair(table, "WinterNightsAreCold1234", 10);
-    addHandleSockPair(table, "CallMeOnMyCellPhone", 11);
-    print_table(table);
-    
-    // Test the get function
-    if(getSockNum(table, "DestroyerEli31")) {
-        printf("\n**** Value of 'DestroyerEli31': %d ****\n", getSockNum(table, "DestroyerEli31"));
-    }
-    else {
-        printf("Key not found\n");
-    }
- 
-    printf("\nTable after removing handles\n");   
-    removeHandleSockPair(table, "SinisterBaloney");
-    removeHandleSockPair(table, "DestroyerEli31");
-    print_table(table);
-    
-    free_table(table);
-    return 0;
+/* Returns the number of elements in the table */
+int get_handle_count() {
+    return handletable->count;
 }
-*/

@@ -27,11 +27,10 @@
 #include "pdu_io.h"
 #include "pollLib.h"
 #include "handle_table.h"
+#include "packetFactory.h"
 
 /* Definitions */
-#define MAXBUF 1024
 #define MAX_MSG_SIZE 200
-#define MAX_H 101
 #define MAX_NUM_HANDLES 9
 #define DEBUG_FLAG 1
 
@@ -42,6 +41,7 @@ void addNewSocket(int mainServerSocket);
 void processClient(int clientSocket); // renamed from recvFromClient
 void flagCheck(uint8_t *dataBuffer, int clientSocket, int messageLen);
 void processMCMsgs(uint8_t *dataBuffer, int clientSocket, int messageLen);
+void processBMsgs(uint8_t *dataBuffer, int clientSocket, int messageLen);
 
 int main(int argc, char *argv[])
 {
@@ -140,34 +140,32 @@ void processClient(int clientSocket) // used to be recvFromClient
 	// Check if the connection is closed
 	else if (messageLen == 0)
 	{
-		printf("Connection closed by other side: %d\n", clientSocket);
+		//printf("Connection closed by other side: %d\n", clientSocket);
+		// Remove the handle from the handle table 
+		removeHandleSockPairBySocket(clientSocket);
+
+		// Remove the socket from the poll set	
 		removeFromPollSet(clientSocket);
 		close(clientSocket);
 	}
 }
-
+/* Checks flag that was sent by the client */
 void flagCheck(uint8_t *dataBuffer, int clientSocket, int messageLen) {
 	if (dataBuffer[0] == 1) { // Add handle flag
-		printf("Initial packet flag received by server.\n");
-		uint8_t handle_len = dataBuffer[1];
-		uint8_t handle[MAX_H] = {0};
-		memcpy(handle, &dataBuffer[2], handle_len);
-		addHandleSockPair((const char *)handle, clientSocket);
+		processFlag1(dataBuffer, clientSocket);
 	}
 	else if(dataBuffer[0] == 5) { // Send message flag
-		printf("Send message flag received by server.\n");
 		processMCMsgs(dataBuffer, clientSocket, messageLen);
 	}
 	else if (dataBuffer[0] == 6) { // Multicast flag
-		printf("Multicast flag received by server.\n");
 		processMCMsgs(dataBuffer, clientSocket, messageLen);
 
 	}
 	else if (dataBuffer[0] == 4) { // Broadcast flag
-		printf("Broadcast flag received by server.\n");
+		processBMsgs(dataBuffer, clientSocket, messageLen);
 	}
 	else if (dataBuffer[0] == 10) { // List of handles flag
-		printf("List of handles flag received by server.\n");
+		listCmd(clientSocket);
 	}
 	else {
 		printf("Invalid flag received by server.\n");
@@ -193,7 +191,6 @@ void processMCMsgs(uint8_t *dataBuffer, int clientSocket, int messageLen) {
 		packetIndex += lengthofdestinationhandle;
 	};
 	
-	// figure out how to send message to each socket
 	// Iterate through handle array to send message to each socket
 	for (int handle_indx = 0; handle_indx < num_handles; handle_indx++) {
 		
@@ -203,13 +200,12 @@ void processMCMsgs(uint8_t *dataBuffer, int clientSocket, int messageLen) {
 		// Get socket number from handle table
 		int destSocket = getSockNum((char *)current_handle);
 	
-
 		if (destSocket == - 1) {
 			// Create "client does not exist" packet
 			uint8_t error_packet[MAX_H + 2] = {0};
 			error_packet[0] = 7; 	// 1 byte Flag
 			error_packet[1] = current_handle_length;	// 1 byte
-			memcpy(&error_packet[1], handleArray[handle_indx], current_handle_length);
+			memcpy(&error_packet[2], handleArray[handle_indx], current_handle_length);
 			// Send a "client does not exist" packet to destination handle
 			sendPDU(clientSocket, error_packet, current_handle_length + 2);
 		}
@@ -217,7 +213,35 @@ void processMCMsgs(uint8_t *dataBuffer, int clientSocket, int messageLen) {
 			// Send original packet to destination handle
 			sendPDU(destSocket, dataBuffer, messageLen);
 		}
-		
 	}
-
+}
+/* Processes broadcast packet and sends it to all online handles */
+void processBMsgs(uint8_t *dataBuffer, int clientSocket, int messageLen) {
+	// Get all handles from the handle table
+	int num_handles = get_handle_count();
+	char **handle_list = get_all_handles(&num_handles);
+	
+	// Iterate through handle list to send message to each socket
+	for (int handle_index = 0; handle_index < num_handles; handle_index++) {
+		uint8_t *current_handle = (uint8_t *)handle_list[handle_index];
+		uint8_t current_handle_length = strlen((char *)current_handle);
+		// Get socket number from handle table
+		int destSocket = getSockNum((char *)current_handle);
+		
+		if (destSocket == -1) {
+			// Create "client does not exist" packet
+			uint8_t error_packet[MAX_H + 2] = {0};
+			error_packet[0] = 7; 	// 1 byte Flag
+			error_packet[1] = current_handle_length;	// 1 byte
+			memcpy(&error_packet[2], handle_list[handle_index], current_handle_length);
+			// Send a "client does not exist" packet to destination handle
+			sendPDU(clientSocket, error_packet, current_handle_length + 2);
+		}
+		else {
+			if (destSocket != clientSocket) {
+				// Send original packet to destination handle
+				sendPDU(destSocket, dataBuffer, messageLen);
+			}
+		}
+	}
 }

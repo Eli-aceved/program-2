@@ -21,7 +21,7 @@ struct HandleTable{
     ClientNode **buckets;    // Array of pointers to linked lists
     int size;                // Size of the table
     int count;               // Number of elements in the table
-} ; // Hash table structure
+}; // Hash table structure
 
 /* Function Prototypes */
 unsigned int hash_func(const char *handle, int size);
@@ -31,8 +31,9 @@ void rehash_table(int new_size);
 void addHandleSockPair(const char *handle, int socket);
 int getSockNum(const char *handle);
 void removeHandleSockPair(const char *handle);
-//void print_table(); // For debugging
-//void free_table(HandleTable *table); // Frees the memory allocated for the table
+void removeHandleSockPairBySocket(int socket);
+char **get_all_handles(int *num_handles);
+int get_handle_count();
 
 
 #endif

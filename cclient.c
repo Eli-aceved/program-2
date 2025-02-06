@@ -33,9 +33,9 @@
 #include "handle_table.h"
 
 /* Definitions */
-#define MAXBUF 1402
+
 #define DEBUG_FLAG 1
-#define MAX_HANDLE_SIZE 100
+
 
 /* Function Prototypes */
 int readFromStdin(uint8_t *buffer);
@@ -46,24 +46,23 @@ void processMsgFromServer(int socketNum);
 void flagCheck(uint8_t *dataBuffer, int clientSocket, int messageLen);
 void sendFlag1(int socketNum, uint8_t *sender_handle);
 void printMCMsgs(uint8_t *dataBuffer);
-
+void printBMsgs(uint8_t *dataBuffer);
+void clientDoesNotExist(uint8_t *dataBuffer);
 
 
 int main(int argc, char * argv[])
 {
 	int socketNum = 0;         //socket descriptor
 	// Store the sender's handle
-	uint8_t sender_handle[MAX_HANDLE_SIZE] = {0};
+	uint8_t sender_handle[MAX_H] = {0};
 	
 	checkArgs(argc, argv, sender_handle);
 
 	socketNum = tcpClientSetup(argv[2], argv[3], DEBUG_FLAG);
 
-
 	setupPollSet();
 	addToPollSet(socketNum);
 	sendFlag1(socketNum, (uint8_t*)argv[1]);
-
 	addToPollSet(STDIN_FILENO);
 
 	while (1) {
@@ -109,12 +108,12 @@ void checkArgs(int argc, char * argv[], uint8_t *sender_handle)
 	}
 
  	// Store the sender's handle in the provided buffer
-	strncpy((char *)sender_handle, argv[1], MAX_HANDLE_SIZE - 1);
+	strncpy((char *)sender_handle, argv[1], MAX_H - 1);
 
 	 // Check if the last character is a null terminator
-    if (sender_handle[MAX_HANDLE_SIZE - 1] != '\0') {
+    if (sender_handle[MAX_H - 1] != '\0') {
         // Manually adds the null terminator if not already present
-        sender_handle[MAX_HANDLE_SIZE - 1] = '\0';
+        sender_handle[MAX_H - 1] = '\0';
     }
 }
 
@@ -174,7 +173,7 @@ void processMsgFromServer(int socketNum) {
 
 	// Receive the data from the server
 	bytesRead = recvPDU(socketNum, dataBuffer, MAXBUF);
-
+	
 	flagCheck(dataBuffer, socketNum, bytesRead);
 
 	// Ensure connection is still open
@@ -183,29 +182,60 @@ void processMsgFromServer(int socketNum) {
 		close(socketNum);
 		exit(-1);
 	}
-	// Display the message received from the server if there are bytes to read
-	else if (bytesRead > 0) {
-		printf("\nMessage received from server of length: %u\n", bytesRead);//WILL BE REMOVED
+}
+
+/* Checks flag that was sent by the server */
+void flagCheck(uint8_t *dataBuffer, int clientSocket, int messageLen) {
+	if (dataBuffer[0] == 2) {	
+	}
+	else if (dataBuffer[0] == 3) {
+		printf("\nHandle already in use\n");
+		exit(-1);
+	}
+	else if (dataBuffer[0] == 4) {
+		printBMsgs(dataBuffer);
+	}
+	else if (dataBuffer[0] == 5) { // Send message flag
+		printMCMsgs(dataBuffer);
+	}
+	else if (dataBuffer[0] == 6) { // Multicast flag
+		printMCMsgs(dataBuffer);
+	}
+	else if (dataBuffer[0] == 7) { // Broadcast flag
+		clientDoesNotExist(dataBuffer); 
+	}
+	else if (dataBuffer[0] == 11) { // Number of handles
+		// Parse flag 11 packet and print the number of handles
+		uint32_t num_handles = 0;
+		memcpy(&num_handles, &dataBuffer[1], sizeof(num_handles));
+		num_handles = ntohl(num_handles);
+		printf("\nNumber of handles: %d\n", num_handles);
+
+		tempBlock(clientSocket);
+	}
+	else if (dataBuffer[0] == 12) { // Handle name
+		// Prints the handle name
+		printf("%s\n", &dataBuffer[2]);
+		
+		tempBlock(clientSocket);
+	}
+	else if (dataBuffer[0] == 13) { // List of handles done
+	}
+	else {
+		printf("\nInvalid flag received by client: %d\n", dataBuffer[0]);
 	}
 }
 
-void flagCheck(uint8_t *dataBuffer, int clientSocket, int messageLen) {
-	if (dataBuffer[0] == 5) { // Add handle flag
-		printf("\nSend message flag received by client.\n");
-		printMCMsgs(dataBuffer);
-	}
-	else if (dataBuffer[0] == 6) {
-		printf("\nMulticast flag received by client.\n");
-		printMCMsgs(dataBuffer);
-	}
-	else {
-		printf("\nInvalid flag received by client.\n");
+void tempBlock(int clientSocket) {
+	int pollCallResult = pollCall(-1);
+	if (pollCallResult == clientSocket) {
+		processMsgFromServer(clientSocket);
 	}
 }
 
 /* Initial flag when client attempts to connect to the server (sends flag to server)*/
 void sendFlag1(int socketNum, uint8_t *sender_handle) {
-	uint8_t packetBuffer[MAX_HANDLE_SIZE] = {0};	// Buffer to store the data that will be sent to the server
+	uint8_t packetBuffer[MAX_H] = {0};	// Buffer to store the data that will be sent to the server
 	uint8_t flag = 1;
 	uint8_t handle_len = strlen((char *)sender_handle);
 
@@ -216,11 +246,16 @@ void sendFlag1(int socketNum, uint8_t *sender_handle) {
 
 	sendPDU(socketNum, packetBuffer, handle_len + 2);
 
+	int pollCallResult = pollCall(-1);
+	if (pollCallResult == socketNum) {
+		processMsgFromServer(socketNum);
+	}
+
 }
 
 /* Prints the message received from the server onto the client terminal */
 void printMCMsgs(uint8_t *dataBuffer) {
-	uint8_t senderHandle[MAX_HANDLE_SIZE] = {0};
+	uint8_t senderHandle[MAX_H] = {0};
 	int packetIndex = 1; // Skip the flag, start at the sender handle/number of handles
 	uint8_t lengthofsenderhandle = dataBuffer[packetIndex++]; // 1 byte
 	memcpy(senderHandle, &dataBuffer[packetIndex], lengthofsenderhandle);
@@ -231,11 +266,31 @@ void printMCMsgs(uint8_t *dataBuffer) {
 	
 	uint8_t lengthofdestinationhandle = 0;
 	// Parse buffer to skip dest. handles
-	for (int i = 0; i < num_handles && i < MAX_HANDLE_SIZE; i++) {
+	for (int i = 0; i < num_handles && i < MAX_H; i++) {
 		lengthofdestinationhandle = dataBuffer[packetIndex++]; // 1 byte
 		packetIndex += lengthofdestinationhandle;
 	};
-	
-	printf("%s: %s\n", senderHandle, &dataBuffer[packetIndex]);
+	// Print the multicast & unicast message on terminal
+	printf("\n%s: %s\n", senderHandle, &dataBuffer[packetIndex]);
 
+}
+
+/* Prints the message received from the server onto the client terminal */
+void printBMsgs(uint8_t *dataBuffer) {
+	uint8_t senderHandle[MAX_H] = {0};
+	int packetIndex = 1; // Skip the flag, start at the sender handle/number of handles
+	uint8_t lengthofsenderhandle = dataBuffer[packetIndex++]; // 1 byte
+	memcpy(senderHandle, &dataBuffer[packetIndex], lengthofsenderhandle);
+	packetIndex += lengthofsenderhandle;
+	// Print the broadcast message on terminal
+	printf("\n%s: %s\n", senderHandle, &dataBuffer[packetIndex]);
+
+}
+
+void clientDoesNotExist(uint8_t *dataBuffer) { // flag, handle length, handle
+	uint8_t handle[MAX_H] = {0};
+	int packetIndex = 1; // Skip the flag, start at the sender handle/number of handles
+	uint8_t lengthofhandle = dataBuffer[packetIndex++]; // 1 byte
+	memcpy(handle, &dataBuffer[packetIndex], lengthofhandle);
+	printf("\nClient with handle %s does not exist.\n", handle);
 }

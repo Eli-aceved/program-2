@@ -1,3 +1,10 @@
+## Version 0.1.17 - Finished Program#2 & all commands are successful
+- Handled printing the handles that don't exist on client sender terminal
+- Broadcast and list of handles now work (%B, %L)
+- Code takes care of removing key-sock pair when a client disconnects
+- Broadcast doesn't send to sender
+- Cleaned up code for submission
+
 ## Version 0.1.16 - %M & %C command testing
 - Created table to be globally accesible
 - Deleted no longer needed lines of code in pdu_io.c
