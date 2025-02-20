@@ -48,6 +48,7 @@ void sendFlag1(int socketNum, uint8_t *sender_handle);
 void printMCMsgs(uint8_t *dataBuffer);
 void printBMsgs(uint8_t *dataBuffer);
 void clientDoesNotExist(uint8_t *dataBuffer);
+void tempBlock(int clientSocket);
 
 
 int main(int argc, char * argv[])

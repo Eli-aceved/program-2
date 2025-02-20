@@ -1,3 +1,6 @@
+## Version 0.1.18 - Missing prototype
+- Added prototype to cclient
+
 ## Version 0.1.17 - Finished Program#2 & all commands are successful
 - Handled printing the handles that don't exist on client sender terminal
 - Broadcast and list of handles now work (%B, %L)
